@@ -2,7 +2,10 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -25,6 +28,38 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        $this->renderable(function (HttpException $exception) {
+            return response()->json([
+                'result' => 'failure',
+                'type' => 'http',
+                'message' => $exception->getMessage()
+            ], $exception->getStatusCode());
+        });
+
+        $this->renderable(function (ValidationException $exception) {
+            return response()->json([
+                'result' => 'failure',
+                'type' => 'validation',
+                'message' => $exception->errorBag
+            ], 422);
+        });
+
+        $this->renderable(function (DecryptException $exception) {
+            return response()->json([
+                'result' => 'failure',
+                'type' => 'decrypt',
+                'message' => '복호화 오류'
+            ], 500);
+        });
+
+        $this->renderable(function (\Exception $exception) {
+            return response()->json([
+                'result' => 'failure',
+                'type' => 'exception',
+                'message' => $exception->getMessage()
+            ], 500);
         });
     }
 }
